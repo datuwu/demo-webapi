@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -20,5 +21,11 @@ namespace MyWebAPI.Data
 
         [ForeignKey("CategoryId")]
         public Category Category { get; set; }
+
+        public virtual ICollection<OrderDetail> OrderDetails { get; set; }
+        public Good()
+        {
+            OrderDetails = new List<OrderDetail>();
+        }
     }
 }
