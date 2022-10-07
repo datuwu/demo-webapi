@@ -9,6 +9,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.OpenApi.Models;
 using MyWebAPI.Data;
+using MyWebAPI.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -34,6 +35,10 @@ namespace MyWebAPI
             {
                 option.UseSqlServer(Configuration.GetConnectionString("MyDB"));
             });
+            //services.AddScoped<ICategoryRepository, CategoryRepository>();
+
+            //services.AddScoped<ICategoryRepository, CategoryRepositoryInMemory>();
+            services.AddAuthentication();
             services.AddSwaggerGen(c =>
             {
                 c.SwaggerDoc("v1", new OpenApiInfo { Title = "MyWebAPI", Version = "v1" });

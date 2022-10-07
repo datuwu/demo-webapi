@@ -1,7 +1,9 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using MyWebAPI.Data;
 using MyWebAPI.Models;
+using MyWebAPI.Services;
 using System.Linq;
 
 namespace MyWebAPI.Controllers
@@ -10,17 +12,24 @@ namespace MyWebAPI.Controllers
     [ApiController]
     public class CategoryController : ControllerBase
     {
-        private readonly MyDbContext _dbContext;
-        public CategoryController(MyDbContext context)
+        private readonly ICategoryRepository _categoryRepository;
+
+        public CategoryController(ICategoryRepository categoryRepository)
         {
-            _dbContext = context;
+            _categoryRepository = categoryRepository;
         }
 
         [HttpGet]
         public IActionResult GetAll()
         {
-            var list = _dbContext.Categories.ToList();
-            return Ok(list);
+            try
+            {
+                return Ok(_categoryRepository.GetAll());
+            }
+            catch
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError);
+            }
         }
 
         [HttpGet("{id}")]
@@ -28,58 +37,53 @@ namespace MyWebAPI.Controllers
         {
             try
             {
-                var category = _dbContext.Categories.SingleOrDefault(c => c.CategoryId == id);
-                if (category == null)
+                var data = _categoryRepository.GetById(id);
+                if (data != null)
+                {
+                    return Ok(data);
+                }
+                else
                 {
                     return NotFound();
                 }
-
-                return Ok(category);
             }
             catch
             {
-                return BadRequest();
+                return StatusCode(StatusCodes.Status500InternalServerError);
             }
         }
 
 
         [HttpPost]
-        public IActionResult Create(CategoryModel model)
+        public IActionResult Add(CategoryModel category)
         {
             try
             {
-                var category = new Category
-                {
-                    CategoryName = model.CategoryName,
-                };
-                _dbContext.Add(category);
-                _dbContext.SaveChanges();
+                var data = _categoryRepository.Add(category);
 
-                return Ok(category);
+                return Ok(data);
             }
             catch
             {
-                return BadRequest();
+                return StatusCode(StatusCodes.Status500InternalServerError);
             }
         }
 
         [HttpPut("{id}")]
-        public IActionResult EditById(int id, CategoryModel model)
+        public IActionResult EditById(int id, CategoryVM category)
         {
+            if (id != category.CategoryId)
+            {
+                return BadRequest();
+            }
             try
             {
-                var category = _dbContext.Categories.SingleOrDefault(c => c.CategoryId == id);
-                if (category == null)
-                {
-                    return NotFound();
-                }
-                category.CategoryName = model.CategoryName;
-                _dbContext.SaveChanges();
-                return Ok(category);
+                _categoryRepository.Update(category);
+                return NoContent();
             }
             catch
             {
-                return BadRequest();
+                return StatusCode(StatusCodes.Status500InternalServerError);
             }
         }
 
@@ -88,15 +92,8 @@ namespace MyWebAPI.Controllers
         {
             try
             {
-                var category = _dbContext.Categories.SingleOrDefault(c => c.CategoryId == id);
-                if (category == null)
-                {
-                    return NotFound();
-                }
-                
-                _dbContext.Categories.Remove(category);
-                _dbContext.SaveChanges();
-                return Ok(category);
+                _categoryRepository.Delete(id);
+                return StatusCode(StatusCodes.Status200OK);
             }
             catch
             {
